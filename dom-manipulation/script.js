@@ -229,7 +229,7 @@
     }
 
     // JSON Export Function
-    function exportQuotesToJSON() {
+    function exportToJSONFile() {
       try {
         const quotesJSON = JSON.stringify(quotes, null, 2);
         const blob = new Blob([quotesJSON], { type: 'application/json' });
@@ -312,11 +312,11 @@
       title.textContent = 'Import/Export Quotes';
       
       const exportButton = document.createElement('button');
-      exportButton.textContent = 'Export Quotes to JSON';
-      exportButton.onclick = exportQuotesToJSON;
+      exportButton.textContent = 'Export Quotes';
+      exportButton.onclick = exportToJSONFile;
       
       const importLabel = document.createElement('label');
-      importLabel.textContent = 'Import Quotes from JSON file:';
+      importLabel.textContent = 'Import Quotes';
       
       const importInput = document.createElement('input');
       importInput.type = 'file';
