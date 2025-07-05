@@ -1,5 +1,5 @@
-// Quote database - array of quote objects
-    let quotes = [
+// Default quotes array
+    const defaultQuotes = [
       {
         text: "The only way to do great work is to love what you do.",
         category: "Motivation",
@@ -42,7 +42,66 @@
       }
     ];
 
+    let quotes = [];
     let currentQuoteIndex = -1;
+
+    // Local Storage Functions
+    function saveQuotes() {
+      try {
+        const quotesJSON = JSON.stringify(quotes);
+        localStorage.setItem('quotesData', quotesJSON);
+        console.log('Quotes saved to localStorage');
+      } catch (error) {
+        console.error('Error saving quotes to localStorage:', error);
+        alert('Error saving quotes to local storage');
+      }
+    }
+
+    function loadQuotes() {
+      try {
+        const savedQuotes = localStorage.getItem('quotesData');
+        if (savedQuotes) {
+          quotes = JSON.parse(savedQuotes);
+          console.log('Quotes loaded from localStorage');
+        } else {
+          quotes = [...defaultQuotes];
+          saveQuotes(); // Save default quotes to localStorage
+          console.log('Default quotes loaded and saved');
+        }
+      } catch (error) {
+        console.error('Error loading quotes from localStorage:', error);
+        quotes = [...defaultQuotes];
+      }
+    }
+
+    // Session Storage Functions
+    function saveLastViewedQuote(quoteIndex) {
+      try {
+        const sessionData = {
+          lastViewedQuote: quoteIndex,
+          timestamp: new Date().toISOString(),
+          totalQuotesViewed: getSessionViewCount() + 1
+        };
+        sessionStorage.setItem('quoteSession', JSON.stringify(sessionData));
+      } catch (error) {
+        console.error('Error saving to sessionStorage:', error);
+      }
+    }
+
+    function getSessionData() {
+      try {
+        const sessionData = sessionStorage.getItem('quoteSession');
+        return sessionData ? JSON.parse(sessionData) : null;
+      } catch (error) {
+        console.error('Error reading from sessionStorage:', error);
+        return null;
+      }
+    }
+
+    function getSessionViewCount() {
+      const sessionData = getSessionData();
+      return sessionData ? sessionData.totalQuotesViewed : 0;
+    }
 
     // Function to show random quote
     function showRandomQuote() {
@@ -59,6 +118,9 @@
       
       currentQuoteIndex = randomIndex;
       const selectedQuote = quotes[randomIndex];
+      
+      // Save to session storage
+      saveLastViewedQuote(randomIndex);
       
       // Create quote display elements
       const quoteDisplay = document.getElementById('quoteDisplay');
@@ -159,68 +221,138 @@
       };
       
       quotes.push(newQuote);
+      saveQuotes(); // Save to localStorage
       
       document.getElementById('addQuoteFormContainer').remove();
       
-      alert('Quote added successfully!');
+      alert('Quote added successfully and saved to local storage!');
+    }
+
+    // JSON Export Function
+    function exportQuotesToJSON() {
+      try {
+        const quotesJSON = JSON.stringify(quotes, null, 2);
+        const blob = new Blob([quotesJSON], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const downloadLink = document.createElement('a');
+        downloadLink.href = url;
+        downloadLink.download = `quotes_export_${new Date().toISOString().split('T')[0]}.json`;
+        downloadLink.textContent = 'Download JSON';
+        
+        // Trigger download
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        // Clean up the URL object
+        URL.revokeObjectURL(url);
+        
+        alert('Quotes exported successfully!');
+      } catch (error) {
+        console.error('Error exporting quotes:', error);
+        alert('Error exporting quotes');
+      }
+    }
+
+    // JSON Import Function
+    function importFromJsonFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const fileReader = new FileReader();
+      fileReader.onload = function(event) {
+        try {
+          const importedQuotes = JSON.parse(event.target.result);
+          
+          // Validate imported data
+          if (!Array.isArray(importedQuotes)) {
+            throw new Error('Invalid format: Expected an array of quotes');
+          }
+          
+          // Validate each quote object
+          for (let quote of importedQuotes) {
+            if (!quote.text || !quote.category) {
+              throw new Error('Invalid quote format: Each quote must have text and category');
+            }
+          }
+          
+          quotes.push(...importedQuotes);
+          saveQuotes(); // Save to localStorage
+          alert(`Successfully imported ${importedQuotes.length} quotes!`);
+          
+          // Clear the file input
+          event.target.value = '';
+          
+        } catch (error) {
+          console.error('Error importing quotes:', error);
+          alert(`Error importing quotes: ${error.message}`);
+        }
+      };
+      
+      fileReader.onerror = function() {
+        alert('Error reading the file');
+      };
+      
+      fileReader.readAsText(file);
+    }
+
+    // Function to show import/export controls
+    function showImportExportControls() {
+      const existingControls = document.getElementById('importExportContainer');
+      if (existingControls) {
+        existingControls.remove();
+        return;
+      }
+      
+      const container = document.createElement('div');
+      container.id = 'importExportContainer';
+      
+      const title = document.createElement('h3');
+      title.textContent = 'Import/Export Quotes';
+      
+      const exportButton = document.createElement('button');
+      exportButton.textContent = 'Export Quotes to JSON';
+      exportButton.onclick = exportQuotesToJSON;
+      
+      const importLabel = document.createElement('label');
+      importLabel.textContent = 'Import Quotes from JSON file:';
+      
+      const importInput = document.createElement('input');
+      importInput.type = 'file';
+      importInput.id = 'importFile';
+      importInput.accept = '.json';
+      importInput.onchange = importFromJsonFile;
+      
+      const closeButton = document.createElement('button');
+      closeButton.textContent = 'Close';
+      closeButton.onclick = function() {
+        container.remove();
+      };
+      
+      container.appendChild(title);
+      container.appendChild(exportButton);
+      container.appendChild(importLabel);
+      container.appendChild(importInput);
+      container.appendChild(closeButton);
+      
+      document.body.appendChild(container);
     }
 
     // Function to create control buttons
     function createControlButtons() {
-      const controlContainer = document.createElement('div');
+      const controlContainer = document.getElementById('controlButtons');
       
       const addQuoteButton = document.createElement('button');
       addQuoteButton.textContent = 'Add New Quote';
       addQuoteButton.onclick = createAddQuoteForm;
       
-      const statsButton = document.createElement('button');
-      statsButton.textContent = 'Show Stats';
-      statsButton.onclick = showStats;
+      const importExportButton = document.createElement('button');
+      importExportButton.textContent = 'Import/Export';
+      importExportButton.onclick = showImportExportControls;
       
       controlContainer.appendChild(addQuoteButton);
-      controlContainer.appendChild(statsButton);
-      
-      const newQuoteButton = document.getElementById('newQuote');
-      newQuoteButton.parentNode.insertBefore(controlContainer, newQuoteButton.nextSibling);
-    }
-
-    // Function to show statistics
-    function showStats() {
-      const existingStats = document.getElementById('statsContainer');
-      if (existingStats) {
-        existingStats.remove();
-        return;
-      }
-      
-      const statsContainer = document.createElement('div');
-      statsContainer.id = 'statsContainer';
-      
-      const statsTitle = document.createElement('h3');
-      statsTitle.textContent = 'Quote Statistics';
-      
-      const totalQuotes = document.createElement('p');
-      totalQuotes.textContent = `Total Quotes: ${quotes.length}`;
-      
-      const totalCategories = document.createElement('p');
-      const uniqueCategories = [...new Set(quotes.map(quote => quote.category))];
-      totalCategories.textContent = `Total Categories: ${uniqueCategories.length}`;
-      
-      const categoryList = document.createElement('p');
-      categoryList.textContent = `Categories: ${uniqueCategories.join(', ')}`;
-      
-      const closeButton = document.createElement('button');
-      closeButton.textContent = 'Close Stats';
-      closeButton.onclick = function() {
-        statsContainer.remove();
-      };
-      
-      statsContainer.appendChild(statsTitle);
-      statsContainer.appendChild(totalQuotes);
-      statsContainer.appendChild(totalCategories);
-      statsContainer.appendChild(categoryList);
-      statsContainer.appendChild(closeButton);
-      
-      document.body.appendChild(statsContainer);
+      controlContainer.appendChild(importExportButton);
     }
 
     // Event listeners
@@ -228,7 +360,14 @@
 
     // Initialize the application
     document.addEventListener('DOMContentLoaded', function() {
+      // Load quotes from localStorage
+      loadQuotes();
+      
+      // Initialize display
       document.getElementById('quoteDisplay').innerHTML = '<p>Click "Show New Quote" to display a random quote!</p>';
       
+      // Create control buttons
       createControlButtons();
+      
+      console.log('Application initialized with', quotes.length, 'quotes');
     });
