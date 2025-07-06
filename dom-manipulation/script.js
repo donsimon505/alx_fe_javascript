@@ -140,7 +140,7 @@ function updateSyncStatus(status, isError = false) {
   }
 }
 
-async function fetchServerData() {
+async function fetchQuotesFromServer() {
   try {
     updateSyncStatus('Fetching...');
     
@@ -298,7 +298,7 @@ function showNotification(message) {
 
 function startAutoSync() {
   // Sync every 30 seconds
-  syncInterval = setInterval(fetchServerData, 30000);
+  syncInterval = setInterval(fetchQuotesFromServer, 30000);
   console.log('Auto-sync started');
 }
 
@@ -612,7 +612,7 @@ function createControlButtons() {
 
 // Event listeners
 document.getElementById('newQuote').addEventListener('click', showRandomQuote);
-document.getElementById('manualSync').addEventListener('click', fetchServerData);
+document.getElementById('manualSync').addEventListener('click', fetchQuotesFromServer);
 document.getElementById('resolveConflict').addEventListener('click', () => resolveConflict(true));
 document.getElementById('dismissConflict').addEventListener('click', () => resolveConflict(false));
 
@@ -637,7 +637,7 @@ document.addEventListener('DOMContentLoaded', function() {
   startAutoSync();
   
   // Initial sync
-  fetchServerData();
+  fetchQuotesFromServer();
   
   console.log('Application initialized with', quotes.length, 'quotes');
 });
