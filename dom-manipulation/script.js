@@ -51,28 +51,27 @@ let currentFilter = 'all';
 function saveQuotes() {
   try {
     const quotesJSON = JSON.stringify(quotes);
-    // Using in-memory storage for this environment
-    window.quotesData = quotesJSON;
-    console.log('Quotes saved to storage');
+    localStorage.setItem('quotesData', quotesJSON);
+    console.log('Quotes saved to localStorage');
   } catch (error) {
-    console.error('Error saving quotes to storage:', error);
-    alert('Error saving quotes to storage');
+    console.error('Error saving quotes to localStorage:', error);
+    alert('Error saving quotes to local storage');
   }
 }
 
 function loadQuotes() {
   try {
-    const savedQuotes = window.quotesData;
+    const savedQuotes = localStorage.getItem('quotesData');
     if (savedQuotes) {
       quotes = JSON.parse(savedQuotes);
-      console.log('Quotes loaded from storage');
+      console.log('Quotes loaded from localStorage');
     } else {
       quotes = [...defaultQuotes];
       saveQuotes();
       console.log('Default quotes loaded and saved');
     }
   } catch (error) {
-    console.error('Error loading quotes from storage:', error);
+    console.error('Error loading quotes from localStorage:', error);
     quotes = [...defaultQuotes];
   }
 }
@@ -85,18 +84,18 @@ function saveLastViewedQuote(quoteIndex) {
       timestamp: new Date().toISOString(),
       totalQuotesViewed: getSessionViewCount() + 1
     };
-    window.quoteSession = JSON.stringify(sessionData);
+    sessionStorage.setItem('quoteSession', JSON.stringify(sessionData));
   } catch (error) {
-    console.error('Error saving to session storage:', error);
+    console.error('Error saving to sessionStorage:', error);
   }
 }
 
 function getSessionData() {
   try {
-    const sessionData = window.quoteSession;
+    const sessionData = sessionStorage.getItem('quoteSession');
     return sessionData ? JSON.parse(sessionData) : null;
   } catch (error) {
-    console.error('Error reading from session storage:', error);
+    console.error('Error reading from sessionStorage:', error);
     return null;
   }
 }
@@ -109,19 +108,19 @@ function getSessionViewCount() {
 // Filter Storage Functions
 function saveLastSelectedFilter(filter) {
   try {
-    window.lastSelectedFilter = filter;
-    console.log('Filter saved to storage:', filter);
+    localStorage.setItem('lastSelectedFilter', filter);
+    console.log('Filter saved to localStorage:', filter);
   } catch (error) {
-    console.error('Error saving filter to storage:', error);
+    console.error('Error saving filter to localStorage:', error);
   }
 }
 
 function loadLastSelectedFilter() {
   try {
-    const savedFilter = window.lastSelectedFilter;
+    const savedFilter = localStorage.getItem('lastSelectedFilter');
     return savedFilter || 'all';
   } catch (error) {
-    console.error('Error loading filter from storage:', error);
+    console.error('Error loading filter from localStorage:', error);
     return 'all';
   }
 }
@@ -142,8 +141,8 @@ function populateCategories() {
     categoryFilter.appendChild(option);
   });
   
-  // Restore last selected filter
-  const lastFilter = loadLastSelectedFilter();
+  // Restore last selected filter using localStorage.getItem
+  const lastFilter = localStorage.getItem('lastSelectedFilter') || 'all';
   categoryFilter.value = lastFilter;
   currentFilter = lastFilter;
 }
@@ -153,8 +152,8 @@ function filterQuotes() {
   const selectedCategory = document.getElementById('categoryFilter').value;
   currentFilter = selectedCategory;
   
-  // Save the selected filter
-  saveLastSelectedFilter(selectedCategory);
+  // Save the selected filter using localStorage.setItem
+  localStorage.setItem('lastSelectedFilter', selectedCategory);
   
   // Update filtered quotes array
   if (selectedCategory === 'all') {
