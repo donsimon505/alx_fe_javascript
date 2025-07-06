@@ -266,7 +266,7 @@ async function syncQuotes() {
     await Promise.all(postPromises);
     
     updateSyncStatus('Local quotes synced');
-    showNotification(`Quotes synced with server`);
+    showNotification(`Quotes synced with server!`);
     
   } catch (error) {
     console.error('Error syncing local quotes:', error);
