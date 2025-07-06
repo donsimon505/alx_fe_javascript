@@ -127,7 +127,7 @@ function getSessionViewCount() {
   return sessionData ? sessionData.totalQuotesViewed : 0;
 }
 
-// Server Simulation Functions
+// Server Functions
 function updateSyncStatus(status, isError = false) {
   const syncStatusText = document.getElementById('syncStatusText');
   const syncIndicator = document.getElementById('syncIndicator');
@@ -144,8 +144,8 @@ async function fetchQuotesFromServer() {
   try {
     updateSyncStatus('Fetching...');
     
-    // Simulate server response with JSONPlaceholder-like structure
-    const serverResponse = await simulateServerFetch();
+    // Fetch from JSONPlaceholder API
+    const serverResponse = await fetchFromJsonPlaceholder();
     
     if (serverResponse.timestamp > lastSyncTimestamp) {
       const hasConflict = detectConflicts(serverResponse.quotes);
@@ -165,35 +165,46 @@ async function fetchQuotesFromServer() {
   }
 }
 
-async function simulateServerFetch() {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Simulate server data with some new quotes
-  const serverQuotes = [
-    ...defaultQuotes,
-    {
-      text: "The way to get started is to quit talking and begin doing.",
-      category: "Action",
-      author: "Walt Disney"
-    },
-    {
-      text: "Don't let yesterday take up too much of today.",
-      category: "Motivation",
-      author: "Will Rogers"
-    },
-    {
-      text: "You learn more from failure than from success.",
-      category: "Learning",
-      author: "Unknown"
+async function fetchFromJsonPlaceholder() {
+  try {
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  ];
-  
-  return {
-    quotes: serverQuotes,
-    timestamp: Date.now(),
-    version: Math.floor(Math.random() * 10) + 5 // Random version higher than local
-  };
+    
+    const posts = await response.json();
+    
+    // Transform posts into quotes format
+    const transformedQuotes = posts.slice(0, 10).map((post, index) => {
+      // Create categories based on post content or user ID
+      const categories = ['Motivation', 'Leadership', 'Wisdom', 'Inspiration', 'Success', 'Dreams', 'Action', 'Learning'];
+      const category = categories[post.userId % categories.length];
+      
+      return {
+        text: post.title.charAt(0).toUpperCase() + post.title.slice(1) + '.',
+        category: category,
+        author: `User ${post.userId}`,
+        id: post.id
+      };
+    });
+    
+    // Combine with some default quotes to ensure we have meaningful content
+    const serverQuotes = [
+      ...defaultQuotes,
+      ...transformedQuotes
+    ];
+    
+    return {
+      quotes: serverQuotes,
+      timestamp: Date.now(),
+      version: Math.floor(Math.random() * 10) + 5 // Random version higher than local
+    };
+    
+  } catch (error) {
+    console.error('Error fetching from JSONPlaceholder:', error);
+    throw error;
+  }
 }
 
 function detectConflicts(serverQuotes) {
@@ -309,6 +320,7 @@ function stopAutoSync() {
     console.log('Auto-sync stopped');
   }
 }
+
 function saveLastSelectedFilter(filter) {
   try {
     localStorage.setItem('lastSelectedFilter', filter);
