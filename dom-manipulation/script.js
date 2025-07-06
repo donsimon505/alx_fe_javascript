@@ -207,6 +207,73 @@ async function fetchFromJsonPlaceholder() {
   }
 }
 
+async function postQuoteToServer(quoteData) {
+  try {
+    updateSyncStatus('Posting quote...');
+    
+    // Transform quote data to match JSONPlaceholder post format
+    const postData = {
+      title: quoteData.text,
+      body: `Category: ${quoteData.category} | Author: ${quoteData.author}`,
+      userId: Math.floor(Math.random() * 10) + 1
+    };
+    
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=UTF-8'
+      },
+      body: JSON.stringify(postData)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('Quote posted successfully:', result);
+    
+    updateSyncStatus('Quote posted');
+    showNotification('Quote successfully posted to server!');
+    
+    return result;
+    
+  } catch (error) {
+    console.error('Error posting quote to server:', error);
+    updateSyncStatus('Post failed', true);
+    showNotification('Failed to post quote to server');
+    throw error;
+  }
+}
+
+async function syncLocalQuotesToServer() {
+  try {
+    updateSyncStatus('Syncing local quotes...');
+    
+    // Get quotes that are not in the default set (user-added quotes)
+    const localQuotes = quotes.filter(quote => 
+      !defaultQuotes.some(defaultQuote => defaultQuote.text === quote.text)
+    );
+    
+    if (localQuotes.length === 0) {
+      updateSyncStatus('No local quotes to sync');
+      return;
+    }
+    
+    // Post each local quote to server
+    const postPromises = localQuotes.slice(0, 3).map(quote => postQuoteToServer(quote));
+    
+    await Promise.all(postPromises);
+    
+    updateSyncStatus('Local quotes synced');
+    showNotification(`Successfully synced ${localQuotes.slice(0, 3).length} quotes to server`);
+    
+  } catch (error) {
+    console.error('Error syncing local quotes:', error);
+    updateSyncStatus('Sync failed', true);
+  }
+}
+
 function detectConflicts(serverQuotes) {
   const localQuoteTexts = new Set(quotes.map(q => q.text));
   const serverQuoteTexts = new Set(serverQuotes.map(q => q.text));
@@ -495,7 +562,7 @@ function createAddQuoteForm() {
 }
 
 // Function to add a new quote (updated for filtering)
-function addQuote() {
+async function addQuote() {
   const textInput = document.getElementById('newQuoteText');
   const categoryInput = document.getElementById('newQuoteCategory');
   const authorInput = document.getElementById('newQuoteAuthor');
@@ -527,6 +594,14 @@ function addQuote() {
   document.getElementById('addQuoteFormContainer').remove();
   
   alert('Quote added successfully and saved to storage!');
+  
+  // Post the new quote to server
+  try {
+    await postQuoteToServer(newQuote);
+  } catch (error) {
+    console.error('Failed to post quote to server:', error);
+    // Quote is still saved locally even if server post fails
+  }
 }
 
 // JSON Export Function
@@ -613,6 +688,10 @@ function createControlButtons() {
   addQuoteButton.textContent = 'Add New Quote';
   addQuoteButton.onclick = createAddQuoteForm;
 
+  const syncLocalButton = document.createElement('button');
+  syncLocalButton.textContent = 'Sync Local Quotes';
+  syncLocalButton.onclick = syncLocalQuotesToServer;
+
   const exportButton = document.getElementById('exportBtn');
   exportButton.onclick = exportQuotesToJSON;
   
@@ -620,6 +699,7 @@ function createControlButtons() {
   importInput.onchange = importFromJsonFile;
   
   controlContainer.appendChild(addQuoteButton);
+  controlContainer.appendChild(syncLocalButton);
 }
 
 // Event listeners
