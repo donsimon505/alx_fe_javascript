@@ -246,7 +246,7 @@ async function postQuoteToServer(quoteData) {
   }
 }
 
-async function syncLocalQuotesToServer() {
+async function syncQuotes() {
   try {
     updateSyncStatus('Syncing local quotes...');
     
@@ -690,7 +690,7 @@ function createControlButtons() {
 
   const syncLocalButton = document.createElement('button');
   syncLocalButton.textContent = 'Sync Local Quotes';
-  syncLocalButton.onclick = syncLocalQuotesToServer;
+  syncLocalButton.onclick = syncQuotes;
 
   const exportButton = document.getElementById('exportBtn');
   exportButton.onclick = exportQuotesToJSON;
