@@ -305,9 +305,6 @@
       addQuoteButton.textContent = 'Add New Quote';
       addQuoteButton.onclick = createAddQuoteForm;
       
-      const container = document.createElement('div');
-      container.id = 'importExportContainer';
-      
       const title = document.createElement('h3');
       title.textContent = 'Import/Export Quotes';
       
