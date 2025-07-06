@@ -229,7 +229,7 @@
     }
 
     // JSON Export Function
-    function exportToJSONFile() {
+    function exportQuotesToJSON() {
       try {
         const quotesJSON = JSON.stringify(quotes, null, 2);
         const blob = new Blob([quotesJSON], { type: 'application/json' });
@@ -297,13 +297,13 @@
       fileReader.readAsText(file);
     }
 
-    // Function to show import/export controls
-    function showImportExportControls() {
-      const existingControls = document.getElementById('importExportContainer');
-      if (existingControls) {
-        existingControls.remove();
-        return;
-      }
+    // Function to create control buttons
+    function createControlButtons() {
+      const controlContainer = document.getElementById('controlButtons');
+      
+      const addQuoteButton = document.createElement('button');
+      addQuoteButton.textContent = 'Add New Quote';
+      addQuoteButton.onclick = createAddQuoteForm;
       
       const container = document.createElement('div');
       container.id = 'importExportContainer';
@@ -312,11 +312,11 @@
       title.textContent = 'Import/Export Quotes';
       
       const exportButton = document.createElement('button');
-      exportButton.textContent = 'Export Quotes';
-      exportButton.onclick = exportToJSONFile;
+      exportButton.textContent = 'Export Quotes to JSON';
+      exportButton.onclick = exportQuotesToJSON;
       
       const importLabel = document.createElement('label');
-      importLabel.textContent = 'Import Quotes';
+      importLabel.textContent = 'Import Quotes from JSON file:';
       
       const importInput = document.createElement('input');
       importInput.type = 'file';
@@ -330,30 +330,12 @@
         container.remove();
       };
       
-      container.appendChild(title);
-      container.appendChild(exportButton);
-      container.appendChild(importLabel);
-      container.appendChild(importInput);
-      container.appendChild(closeButton);
-      
-      document.body.appendChild(container);
-    }
-
-    // Function to create control buttons
-    function createControlButtons() {
-      const controlContainer = document.getElementById('controlButtons');
-      
-      const addQuoteButton = document.createElement('button');
-      addQuoteButton.textContent = 'Add New Quote';
-      addQuoteButton.onclick = createAddQuoteForm;
-      
-      const importExportButton = document.createElement('button');
-      importExportButton.textContent = 'Import/Export';
-      importExportButton.onclick = showImportExportControls;
-      
       controlContainer.appendChild(addQuoteButton);
-      controlContainer.appendChild(importExportButton);
-
+      controlContainer.appendChild(title);
+      controlContainer.appendChild(exportButton);
+      controlContainer.appendChild(importLabel);
+      controlContainer.appendChild(importInput);
+      controlContainer.appendChild(closeButton);
     }
 
     // Event listeners
