@@ -297,48 +297,6 @@
       fileReader.readAsText(file);
     }
 
-    // Function to show import/export controls
-    function showImportExportControls() {
-      const existingControls = document.getElementById('importExportContainer');
-      if (existingControls) {
-        existingControls.remove();
-        return;
-      }
-      
-      const container = document.createElement('div');
-      container.id = 'importExportContainer';
-      
-      const title = document.createElement('h3');
-      title.textContent = 'Import/Export Quotes';
-      
-      const exportButton = document.createElement('button');
-      exportButton.textContent = 'Export Quotes to JSON';
-      exportButton.onclick = exportQuotesToJSON;
-      
-      const importLabel = document.createElement('label');
-      importLabel.textContent = 'Import Quotes from JSON file:';
-      
-      const importInput = document.createElement('input');
-      importInput.type = 'file';
-      importInput.id = 'importFile';
-      importInput.accept = '.json';
-      importInput.onchange = importFromJsonFile;
-      
-      const closeButton = document.createElement('button');
-      closeButton.textContent = 'Close';
-      closeButton.onclick = function() {
-        container.remove();
-      };
-      
-      container.appendChild(title);
-      container.appendChild(exportButton);
-      container.appendChild(importLabel);
-      container.appendChild(importInput);
-      container.appendChild(closeButton);
-      
-      document.body.appendChild(container);
-    }
-
     // Function to create control buttons
     function createControlButtons() {
       const controlContainer = document.getElementById('controlButtons');
@@ -347,38 +305,15 @@
       addQuoteButton.textContent = 'Add New Quote';
       addQuoteButton.onclick = createAddQuoteForm;
 
-      const container = document.createElement('div');
-      container.id = 'importExportContainer';
-      
-      const title = document.createElement('h3');
-      title.textContent = 'Import/Export Quotes';
-      
-      const exportButton = document.createElement('button');
-      exportButton.textContent = 'Export Quotes to JSON';
+      const container = document.getElementById('importExportContainer')
+ 
+      const exportButton = document.getElementById('exportBtn');
       exportButton.onclick = exportQuotesToJSON;
       
-      const importLabel = document.createElement('label');
-      importLabel.textContent = 'Import Quotes from JSON file:';
-      
-      const importInput = document.createElement('input');
-      importInput.type = 'file';
-      importInput.id = 'importFile';
-      importInput.accept = '.json';
+      const importInput = document.getElementById('importFile');
       importInput.onchange = importFromJsonFile;
       
-      const closeButton = document.createElement('button');
-      closeButton.textContent = 'Close';
-      closeButton.onclick = function() {
-        container.remove();
-      };
-    
-      
       controlContainer.appendChild(addQuoteButton);
-      controlContainer.appendChild(title);
-      controlContainer.appendChild(exportButton);
-      controlContainer.appendChild(importLabel);
-      controlContainer.appendChild(importInput);
-      controlContainer.appendChild(closeButton);
     }
 
     // Event listeners
