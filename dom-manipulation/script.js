@@ -46,12 +46,19 @@ let quotes = [];
 let currentQuoteIndex = -1;
 let filteredQuotes = [];
 let currentFilter = 'all';
+let syncInterval;
+let lastSyncTimestamp = 0;
+let conflictData = null;
 
 // Storage Functions
 function saveQuotes() {
   try {
-    const quotesJSON = JSON.stringify(quotes);
-    localStorage.setItem('quotesData', quotesJSON);
+    const quotesData = {
+      quotes: quotes,
+      timestamp: Date.now(),
+      version: getLocalVersion() + 1
+    };
+    localStorage.setItem('quotesData', JSON.stringify(quotesData));
     console.log('Quotes saved to localStorage');
   } catch (error) {
     console.error('Error saving quotes to localStorage:', error);
@@ -61,9 +68,11 @@ function saveQuotes() {
 
 function loadQuotes() {
   try {
-    const savedQuotes = localStorage.getItem('quotesData');
-    if (savedQuotes) {
-      quotes = JSON.parse(savedQuotes);
+    const savedData = localStorage.getItem('quotesData');
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      quotes = parsedData.quotes || parsedData; // Handle both old and new format
+      lastSyncTimestamp = parsedData.timestamp || 0;
       console.log('Quotes loaded from localStorage');
     } else {
       quotes = [...defaultQuotes];
@@ -73,6 +82,19 @@ function loadQuotes() {
   } catch (error) {
     console.error('Error loading quotes from localStorage:', error);
     quotes = [...defaultQuotes];
+  }
+}
+
+function getLocalVersion() {
+  try {
+    const savedData = localStorage.getItem('quotesData');
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      return parsedData.version || 1;
+    }
+    return 1;
+  } catch (error) {
+    return 1;
   }
 }
 
@@ -105,7 +127,188 @@ function getSessionViewCount() {
   return sessionData ? sessionData.totalQuotesViewed : 0;
 }
 
-// Filter Storage Functions
+// Server Simulation Functions
+function updateSyncStatus(status, isError = false) {
+  const syncStatusText = document.getElementById('syncStatusText');
+  const syncIndicator = document.getElementById('syncIndicator');
+  
+  syncStatusText.textContent = status;
+  syncIndicator.textContent = isError ? '❌ Sync Status: ' : '🔄 Sync Status: ';
+  
+  if (status === 'Synced') {
+    syncIndicator.textContent = '✅ Sync Status: ';
+  }
+}
+
+async function fetchServerData() {
+  try {
+    updateSyncStatus('Fetching...');
+    
+    // Simulate server response with JSONPlaceholder-like structure
+    const serverResponse = await simulateServerFetch();
+    
+    if (serverResponse.timestamp > lastSyncTimestamp) {
+      const hasConflict = detectConflicts(serverResponse.quotes);
+      
+      if (hasConflict) {
+        handleConflict(serverResponse);
+      } else {
+        mergeServerData(serverResponse);
+      }
+    } else {
+      updateSyncStatus('Up to date');
+    }
+    
+  } catch (error) {
+    console.error('Error fetching server data:', error);
+    updateSyncStatus('Sync failed', true);
+  }
+}
+
+async function simulateServerFetch() {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Simulate server data with some new quotes
+  const serverQuotes = [
+    ...defaultQuotes,
+    {
+      text: "The way to get started is to quit talking and begin doing.",
+      category: "Action",
+      author: "Walt Disney"
+    },
+    {
+      text: "Don't let yesterday take up too much of today.",
+      category: "Motivation",
+      author: "Will Rogers"
+    },
+    {
+      text: "You learn more from failure than from success.",
+      category: "Learning",
+      author: "Unknown"
+    }
+  ];
+  
+  return {
+    quotes: serverQuotes,
+    timestamp: Date.now(),
+    version: Math.floor(Math.random() * 10) + 5 // Random version higher than local
+  };
+}
+
+function detectConflicts(serverQuotes) {
+  const localQuoteTexts = new Set(quotes.map(q => q.text));
+  const serverQuoteTexts = new Set(serverQuotes.map(q => q.text));
+  
+  // Check if local has quotes not in server (potential conflict)
+  const localOnlyQuotes = quotes.filter(q => !serverQuoteTexts.has(q.text));
+  
+  // Only consider it a conflict if we have quotes that aren't in the server
+  // and the server has been updated recently
+  return localOnlyQuotes.length > 0 && quotes.length !== serverQuotes.length;
+}
+
+function handleConflict(serverData) {
+  conflictData = serverData;
+  
+  const conflictNotification = document.getElementById('conflictNotification');
+  const conflictMessage = document.getElementById('conflictMessage');
+  
+  const localOnlyCount = quotes.filter(q => 
+    !serverData.quotes.some(sq => sq.text === q.text)
+  ).length;
+  
+  const serverOnlyCount = serverData.quotes.filter(sq => 
+    !quotes.some(q => q.text === sq.text)
+  ).length;
+  
+  conflictMessage.innerHTML = `
+    <strong>Data Conflict Detected!</strong><br>
+    Local quotes: ${quotes.length} (${localOnlyCount} unique)<br>
+    Server quotes: ${serverData.quotes.length} (${serverOnlyCount} new)<br>
+    Choose how to resolve:
+  `;
+  
+  conflictNotification.style.display = 'block';
+  updateSyncStatus('Conflict detected', true);
+}
+
+function mergeServerData(serverData) {
+  const existingTexts = new Set(quotes.map(q => q.text));
+  const newQuotes = serverData.quotes.filter(sq => !existingTexts.has(sq.text));
+  
+  if (newQuotes.length > 0) {
+    quotes.push(...newQuotes);
+    saveQuotes();
+    populateCategories();
+    filterQuotes();
+    
+    showNotification(`Added ${newQuotes.length} new quotes from server`);
+  }
+  
+  lastSyncTimestamp = serverData.timestamp;
+  updateSyncStatus('Synced');
+}
+
+function resolveConflict(acceptServer) {
+  if (!conflictData) return;
+  
+  if (acceptServer) {
+    // Accept server data, merge with local
+    quotes = [...conflictData.quotes];
+    // Add any local-only quotes that user might want to keep
+    // This is a simple merge strategy
+    saveQuotes();
+    populateCategories();
+    filterQuotes();
+    showNotification('Accepted server changes and merged data');
+  } else {
+    // Keep local data, but update timestamp to avoid repeated conflicts
+    lastSyncTimestamp = conflictData.timestamp;
+    showNotification('Kept local changes');
+  }
+  
+  conflictData = null;
+  document.getElementById('conflictNotification').style.display = 'none';
+  updateSyncStatus('Conflict resolved');
+}
+
+function showNotification(message) {
+  // Create a temporary notification
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #4CAF50;
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    z-index: 1000;
+    max-width: 300px;
+  `;
+  notification.textContent = message;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
+}
+
+function startAutoSync() {
+  // Sync every 30 seconds
+  syncInterval = setInterval(fetchServerData, 30000);
+  console.log('Auto-sync started');
+}
+
+function stopAutoSync() {
+  if (syncInterval) {
+    clearInterval(syncInterval);
+    syncInterval = null;
+    console.log('Auto-sync stopped');
+  }
+}
 function saveLastSelectedFilter(filter) {
   try {
     localStorage.setItem('lastSelectedFilter', filter);
@@ -409,6 +612,9 @@ function createControlButtons() {
 
 // Event listeners
 document.getElementById('newQuote').addEventListener('click', showRandomQuote);
+document.getElementById('manualSync').addEventListener('click', fetchServerData);
+document.getElementById('resolveConflict').addEventListener('click', () => resolveConflict(true));
+document.getElementById('dismissConflict').addEventListener('click', () => resolveConflict(false));
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -426,6 +632,12 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Create control buttons
   createControlButtons();
+  
+  // Start auto-sync
+  startAutoSync();
+  
+  // Initial sync
+  fetchServerData();
   
   console.log('Application initialized with', quotes.length, 'quotes');
 });
