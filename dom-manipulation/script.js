@@ -312,7 +312,7 @@
       title.textContent = 'Import/Export Quotes';
       
       const exportButton = document.createElement('button');
-      exportButton.textContent = 'Export Quotes to JSON';
+      exportButton.textContent = 'Export Quotes';
       exportButton.onclick = exportQuotesToJSON;
       
       const importLabel = document.createElement('label');
