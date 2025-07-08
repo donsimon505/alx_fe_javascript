@@ -1,39 +1,39 @@
 <!DOCTYPE html>
-  <html lang="en">
+<html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dynamic Quote Generator</title>
   </head>
   <body>
     <h1>Dynamic Quote Generator</h1>
     <div id="sessionInfo"></div>
     <div id="syncStatus">
-        <span id="syncIndicator">🔄 Sync Status: </span>
-        <span id="syncStatusText">Ready</span>
-        <button id="manualSync">Manual Sync</button>
+      <span id="syncIndicator">🔄 Sync Status: </span>
+      <span id="syncStatusText">Ready</span>
+      <button id="manualSync">Manual Sync</button>
     </div>
-    <div id="conflictNotification" style="display:none;">
-        <div id="conflictMessage"></div>
-        <button id="resolveConflict">Accept Server Changes</button>
-        <button id="dismissConflict">Keep Local Changes</button>
+    <div id="conflictNotification" style="display: none">
+      <div id="conflictMessage"></div>
+      <button id="resolveConflict">Accept Server Changes</button>
+      <button id="dismissConflict">Keep Local Changes</button>
     </div>
     <div id="filterContainer">
-        <label for="categoryFilter">Filter by Category:</label>
-        <select id="categoryFilter" onchange="filterQuotes()">
+      <label for="categoryFilter">Filter by Category:</label>
+      <select id="categoryFilter" onchange="filterQuotes()">
         <option value="all">All Categories</option>
         <!-- Dynamically populated categories -->
-        </select>
+      </select>
     </div>
     <div id="quoteDisplay"></div>
     <button id="newQuote">Show New Quote</button>
     <div id="controlButtons"></div>
     <div id="importExportContainer">
-        <h3>Import/Export Quotes</h3>
-        <button id="exportBtn">Export</button>
-        <label>Import Quotes from JSON file:</label>
-        <input type="file" id="importFile" accept=".json">
+      <h3>Import/Export Quotes</h3>
+      <button id="exportBtn">Export</button>
+      <label>Import Quotes from JSON file:</label>
+      <input type="file" id="importFile" accept=".json" />
     </div>
     <script src="script.js"></script>
   </body>
-  </html>
+</html>
